@@ -17,15 +17,15 @@ const server = http.createServer(app); //express 위에 http
 const io = SocketIO(server);
 
 io.on("connection", (socket) =>{
-    socket.on("enter_room", (msg, done) => {
-        console.log(msg);
+    socket.on("enter_room", (roomName, done) => {
+        console.log(roomName);
         setTimeout(() => {
-            done();
+            done("hello from backend");
         }, 10000);
 })});
 
-//const wss = new Websocket.Server({server}); //express 위에 http, websocket
-//const sockets = [];
+// //const wss = new Websocket.Server({server}); //express 위에 http, websocket
+// const sockets = [];
 
 // wss.on("connection",(socket)=>{ //소켓 커넥트
 //     console.log("Connected to Browser");//연결됐을때 메세지 
