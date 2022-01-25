@@ -17,12 +17,25 @@ const server = http.createServer(app); //express 위에 http
 const io = SocketIO(server);
 
 io.on("connection", (socket) =>{
+    socket.onAny((event) => {
+        console.log(`socket Event : ${event}`);
+    })
     socket.on("enter_room", (roomName, done) => {
-        console.log(roomName);
-        setTimeout(() => {
-            done("hello from backend");
-        }, 10000);
-})});
+        socket.join(roomName);
+        done();
+        socket.to(roomName).emit("welcome");
+    });
+    socket.on("disconnecting", () => {
+        socket.rooms.forEach((room)=> { socket.to(room).emit("bye");
+            
+        });
+    })
+    socket.on("new_message", (msg, room, done) => {
+        socket.to(room).emit("new_message", msg);
+        done();
+    })
+});
+//emit이랑 event name이랑 일치하면 불러오는듯
 
 // //const wss = new Websocket.Server({server}); //express 위에 http, websocket
 // const sockets = [];
