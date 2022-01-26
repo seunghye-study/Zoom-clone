@@ -3,7 +3,6 @@ import http, { Server } from "http";
 import express from "express";
 import SocketIO from "socket.io";
 
-
 const app = express(); //express server
 
 app.set("view engine", "pug")
@@ -17,25 +16,28 @@ const server = http.createServer(app); //express 위에 http
 const io = SocketIO(server);
 
 io.on("connection", (socket) => {
+    socket["nickname"] = "Anon";
     socket.onAny((event) => {
+        console.log(io.sockets.adapter);
         console.log(`socket Event : ${event}`);
-    })
+    });
     socket.on("enter_room", (roomName, done) => {
         socket.join(roomName);
         done();
-        socket.to(roomName).emit("welcome");
+        socket.to(roomName).emit("welcome", socket.nickname);
     });
     socket.on("disconnecting", () => {
         socket.rooms.forEach((room) => {
-            socket.to(room).emit("bye");
-
+            socket.to(room).emit("bye", socket.nickname);
         });
-    })
+    });
     socket.on("new_message", (msg, room, done) => {
-        socket.to(room).emit("new_message", msg);
+        socket.to(room).emit("new_message", `${socket.nickname} : ${msg}`);
         done();
-    })
+    });
+    socket.on("new_nickname", nickname => socket["nickname"] = nickname);
 });
+
 //emit이랑 event name이랑 일치하면 불러오는듯
 
 // const wss = new Websocket.Server({server}); //express 위에 http, websocket
@@ -62,3 +64,4 @@ io.on("connection", (socket) => {
 
 
 server.listen(3000, handleListen);
+
