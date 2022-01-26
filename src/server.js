@@ -38,7 +38,7 @@ io.on("connection", (socket) => {
 });
 //emit이랑 event name이랑 일치하면 불러오는듯
 
-// //const wss = new Websocket.Server({server}); //express 위에 http, websocket
+// const wss = new Websocket.Server({server}); //express 위에 http, websocket
 // const sockets = [];
 
 // wss.on("connection",(socket)=>{ //소켓 커넥트
