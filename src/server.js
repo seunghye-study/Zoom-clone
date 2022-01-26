@@ -7,8 +7,8 @@ import SocketIO from "socket.io";
 const app = express(); //express server
 
 app.set("view engine", "pug")
-app.set("views",__dirname+"/views");
-app.use("/public", express.static(__dirname+"/public"));
+app.set("views", __dirname + "/views");
+app.use("/public", express.static(__dirname + "/public"));
 app.get("/", (_, res) => res.render("home2"));
 app.get("/*", (_, res) => res.redirect("/"))
 const handleListen = () => console.log("Listening on ws://localhost:3000");
@@ -16,7 +16,7 @@ const handleListen = () => console.log("Listening on ws://localhost:3000");
 const server = http.createServer(app); //express 위에 http
 const io = SocketIO(server);
 
-io.on("connection", (socket) =>{
+io.on("connection", (socket) => {
     socket.onAny((event) => {
         console.log(`socket Event : ${event}`);
     })
@@ -26,8 +26,9 @@ io.on("connection", (socket) =>{
         socket.to(roomName).emit("welcome");
     });
     socket.on("disconnecting", () => {
-        socket.rooms.forEach((room)=> { socket.to(room).emit("bye");
-            
+        socket.rooms.forEach((room) => {
+            socket.to(room).emit("bye");
+
         });
     })
     socket.on("new_message", (msg, room, done) => {
