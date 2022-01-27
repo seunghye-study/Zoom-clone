@@ -22,11 +22,6 @@ function handlMessageSubmit(event) {
     });
     input.value = "";
 }
-function handlNicknameSubmit(event) {
-    event.preventDefault();
-    const input = room.querySelector("#nickname input");
-    socket.emit("new_nickname", input.value);
-}
 
 function showRoom() {
     welcome.hidden = true;
