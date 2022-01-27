@@ -1,40 +1,59 @@
-const socket = new WebSocket( `ws://${window.location.host}`) //서버로의 연결
-const ulMessage = document.querySelector("ul");
-const formMessage = document.querySelector("#message"); 
-const nickMessage = document.querySelector("#nickname");
+const socket = io();
+const welcome = document.getElementById("welcome");
+const form = welcome.querySelector("form");
+const room = document.getElementById("room");
 
+room.hidden = true;
+let roomName;
 
-function makeMessage(type, payload) {
-    const msg = {type, payload}
-    return JSON.stringify(msg);
-}
-
-socket.addEventListener("open", ()=> {
-    console.log("Connected to server");
-})
-socket.addEventListener("message", (message) =>{
+function addMessage(message) {
+    const ul = room.querySelector("ul");
     const li = document.createElement("li");
-    li.innerText = message.data;
-    formMessage.append(li);
-})
-
-socket.addEventListener("close", ()=> {
-    console.log("disconnected server");
-})
-
-function handleSubmit(event) {
-    event.preventDefault();
-    const input = formMessage.querySelector("input");
-    socket.send(makeMessage("new_message", input.value));
-    const li = document.createElement("li");
-    li.innerText = `You : ${input.value}`;
-    formMessage.append(li);
-    input.value="";
+    li.innerText = message;
+    ul.appendChild(li);
 }
-function handleNick(event) {
+
+function handlMessageSubmit(event) {
     event.preventDefault();
-    const input = nickMessage.querySelector("input");
-    socket.send(makeMessage("nickname", input.value));
+    const input  = room.querySelector("#msg input");
+    const value = input.value;
+    socket.emit("new_message", value, roomName, () => {
+        addMessage(`You : ${value}`);
+    });
+    input.value = "";
 }
-formMessage.addEventListener("submit", handleSubmit);
-nickMessage.addEventListener("submit", handleNick);
+function handlNicknameSubmit(event) {
+    event.preventDefault();
+    const input = room.querySelector("#nickname input");
+    socket.emit("new_nickname", input.value);
+}
+
+function showRoom() {
+    welcome.hidden = true;
+    room.hidden = false;
+    const h3 = room.querySelector("h3");
+    h3.innerText =`Room ${roomName}`;
+    const msgForm = room.querySelector("#msg");
+    msgForm.addEventListener("submit", handlMessageSubmit);
+}
+
+function handleRoomSubmit(event){
+    event.preventDefault();
+    const input = form.querySelector("input")
+    socket.emit("enter_room", input.value, showRoom);
+    roomName = input.value;
+    input.value = ""
+}
+form.addEventListener("submit", handleRoomSubmit);
+
+socket.on("welcome", (user, newCount) => {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+    addMessage(`${user} joined`);
+});
+socket.on("bye", (left, newCount) => {
+    const h3 = room.querySelector("h3");
+    h3.innerText = `Room ${roomName} (${newCount})`;
+    addMessage(`${left} left !`);
+});
+socket.on("new_message", addMessage);

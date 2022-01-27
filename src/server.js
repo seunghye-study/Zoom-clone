@@ -1,7 +1,9 @@
 import http, { Server } from "http";
 //import Websocket from "ws";
 import express from "express";
-import SocketIO from "socket.io";
+import { Server } from "socket.io";
+
+import { instrument } from "@socket.io/admin-ui";
 
 const app = express(); //express server
 
@@ -13,23 +15,52 @@ app.get("/*", (_, res) => res.redirect("/"))
 const handleListen = () => console.log("Listening on ws://localhost:3000");
 
 const server = http.createServer(app); //express 위에 http
-const io = SocketIO(server);
+const io = new Server(server, {
+    cors: {
+        origin: ["https://admin.socket.io"],
+        credentials: true,
+      },
+});
+instrument(io, {
+    auth: false,
+  });
+
+function publicRooms () {
+    const { sockets : {
+        adapter: {sids, rooms},
+    }, } = io;
+    const publicRooms = [];
+    rooms.forEach((_,key) => {
+        if(sids.get(key) === undefined) {
+            publicRooms.push(key);
+        }
+    });
+    return publicRooms;
+}
+
+function countRooms(roomName) {
+    return io.sockets.adapter.rooms.get(roomName)?.size;
+}
 
 io.on("connection", (socket) => {
     socket["nickname"] = "Anon";
     socket.onAny((event) => {
-        console.log(io.sockets.adapter);
         console.log(`socket Event : ${event}`);
     });
     socket.on("enter_room", (roomName, done) => {
         socket.join(roomName);
         done();
-        socket.to(roomName).emit("welcome", socket.nickname);
+        socket.to(roomName).emit("welcome", socket.nickname, countRooms(roomName));
+        io.sockets.emit("room_change", publicRooms());
     });
     socket.on("disconnecting", () => {
         socket.rooms.forEach((room) => {
-            socket.to(room).emit("bye", socket.nickname);
+            socket.to(room).emit("bye", socket.nickname, countRooms(room)-1);
         });
+        
+    });
+    socket.on("disconnect", () => {
+        io.sockets.emit("room_change", publicRooms());
     });
     socket.on("new_message", (msg, room, done) => {
         socket.to(room).emit("new_message", `${socket.nickname} : ${msg}`);
@@ -37,31 +68,5 @@ io.on("connection", (socket) => {
     });
     socket.on("new_nickname", nickname => socket["nickname"] = nickname);
 });
-
-//emit이랑 event name이랑 일치하면 불러오는듯
-
-// const wss = new Websocket.Server({server}); //express 위에 http, websocket
-// const sockets = [];
-
-// wss.on("connection",(socket)=>{ //소켓 커넥트
-//     console.log("Connected to Browser");//연결됐을때 메세지 
-//     sockets.push(socket);
-//     socket["nickname"] = "anon"
-//     socket.on("close", ()=>{
-//         console.log("disconnected");
-//     }); 
-//     socket.on("message", (msg) => {
-//         const message = JSON.parse(msg);
-//         if(message.type === "new_message") {
-//             sockets.forEach(aSocket => aSocket.send(`${socket.nickname} : ${message.payload}`))
-//         }
-//         else if(message.type ==="nickname")
-//         {
-//             socket["nickname"] = message.payload;
-//         }
-//     })
-// });
-
-
 server.listen(3000, handleListen);
 
