@@ -1,4 +1,5 @@
 import http from "http";
+<<<<<<< HEAD
 import SocketIO from "socket.io";
 import express from "express";
 
@@ -29,5 +30,13 @@ wsServer.on("connection", (socket) => {
   });
 });
 
+=======
+import express from "express";
+
+const app = express();
+app.get("/*", (_, res) => res.redirect("/"));
+
+const httpServer = http.createServer(app);
+>>>>>>> 2d054689bd5e7bbc8fd6de5e607971131e88081e
 const handleListen = () => console.log(`Listening on http://localhost:3000`);
 httpServer.listen(3000, handleListen);
